@@ -1,0 +1,186 @@
+;
+; Объявления структур
+;
+
+;
+; Структура для описания дескрипторов сегментов
+;
+TSegmentDesc			STRUCT
+	LimitLow			DW		0
+	BaseLow				DW      0
+	BaseMid				DB      0
+	Attrib				DB      0
+	LimitHighAndAttrib	DB      0
+	BaseHigh			DB      0
+TSegmentDesc			ENDS
+
+;
+; Структура для описания дескрипторов шлюза прерываний
+;
+TInterruptGateDesc		STRUCT
+	OffsetLow			DW		0
+	Selector			DW      0
+						DB      0
+	Attrib				DB      DESC_INTERRUPT_GATE
+	OffsetHigh			DW      0
+TInterruptGateDesc		ENDS
+
+;
+; Структура для описания дескрипторов шлюза вызова
+;
+TCallGateDesc			STRUCT
+	OffsetLow			DW		0
+	Selector			DW		0   
+	NumberOfArguments	DB		0 					; 5 bits
+	Attrib				DB		DESC_CALL_GATE
+	OffsetHigh			DW		0
+TCallGateDesc			ENDS
+
+;
+; Структура для описания дескрипторов шлюза задачи
+;
+TTaskGateDesc			STRUCT
+						DW		0
+	Selector			DW		0
+						DB		0
+	Attrib				DB		0
+						DW		0
+TTaskGateDesc			ENDS
+
+;
+; Структура для описания дескрипторов LDT
+;                             
+TLdtDesc				STRUCT
+	Limit				DW      0
+	BaseLow				DW      0
+	BaseMid				DB      0
+	Attrib				DB		0
+						DB      0
+	BaseHigh			DB		0
+TLdtDesc				ENDS
+
+;
+; Структура для описания дескрипторов TSS
+;
+TTssDesc				STRUCT
+	LimitLow			DW		0
+	BaseLow				DW		0
+	BaseMid				DB		0
+	LimitHigh			DB		0					; 4 bits
+	BaseHigh			DB		0
+TTSSDesc				Ends
+
+;
+; Структура для описания TSS
+;
+TTss					STRUCT
+	PrevTaskSelector	DW		0			; 00h
+						DW		0			; 02h
+
+						UNION				; 04h
+	_ESP0				DD		0
+	_SP0				DW		?
+						ENDS
+						DW		0			; 0Ah
+
+						UNION				; 0Ch
+	_ESP1				DD		0
+	_SP1				DW		?
+						ENDS
+						DW		0			; 12h
+
+						UNION				; 14h
+	_ESP2				DD		0
+	_SP2				DW		?
+						ENDS
+						DW		0			; 1Ah
+
+	_CR3				DD		0			; 1Ch
+
+						UNION				; 20h
+	_EIP				DD		0
+	_IP					DW		?
+						ENDS			
+
+	_EFlags				DD		0			; 24h
+
+						UNION				; 28h
+	_EAX				DD		0
+	_AX					DW		?
+						STRUCT
+	_AL					DB		?
+	_AH					DB		?
+						ENDS
+						ENDS
+
+						UNION				; 2Ch
+	_ECX				DD		0
+	_CX					DW		?
+						STRUCT
+	_CL					DB		?
+	_CH					DB		?
+						ENDS
+						ENDS
+
+						UNION				; 30h
+	_EDX				DD		0
+	_DX					DW		?
+						STRUCT
+	_DL					DB		?
+	_DH					DB		?
+						ENDS
+						ENDS
+
+						UNION				; 34h
+	_EBX				DD		0
+	_BX					DW		?
+						STRUCT
+	_BL					DB		?
+	_BH					DB		?
+						ENDS
+						ENDS
+
+						UNION				; 38h
+	_ESP				DD		0
+	_SP					DW		?
+						ENDS
+
+						UNION				; 3Ch
+	_EBP				DD		0
+	_BP					DW		?
+						ENDS
+
+						UNION				; 40h
+	_ESI				DD		0
+	_SI					DW		?
+						ENDS
+
+						UNION				; 44h
+	_EDI				DD		0
+	_DI					DW		?
+						ENDS
+
+	_ES					DW		0			; 48h
+						DW		0			; 4Ah
+
+	_CS					DW		0			; 4Ch
+						DW		0			; 4Eh
+
+	_SS					DW		0			; 50h
+						DW		0			; 52h
+
+	_DS					DW		0			; 54h
+						DW		0			; 56h
+
+    _FS					DW		0			; 58h
+						DW		0			; 5Ah
+
+    _GS					DW		0			; 5Ch
+						DW		0			; 5Eh
+
+	_LDT				DW		0			; 60h
+						DW		0			; 62h
+
+	T					DW		0			; 64h, 1 bit
+	IOMapBase			DW		0           ; 66h
+TTss					Ends
