@@ -1,0 +1,482 @@
+Turbo Assembler	 Version 4.1	    12/25/14 11:30:56	    Page 1
+test.asm
+
+
+
+      1									 .386							    +
+      2					 ;разрешение использовать регистры и команды процессора	i386
+      3									 locals							    +
+      4					 ;разрешение использовать локальные идентификаторы
+      5
+      6	    0000			 CodeSegment		 segment use16
+      7									 assume	cs:CodeSegment,	ss:StackSegment
+      8
+      9					 include DecToS.inc									    +
+     10					 ;подключение файлов
+1    11					 ; Процедура перевода десятичного знакового числа в строку
+1    12					 ; Вход:
+1    13					 ;		 eax - десятичное знаковое число
+1    14					 ;		 bl - выравнивание:
+1    15					 ;							 0 - по	левому краю
+1    16					 ;							 отличное от 0 - по правому, по	11  +
+     17					 позиции с пробелами
+1    18					 ;		 es:edi	- адрес	буфера
+1    19					 ;		 ecx - размер буффера
+1    20					 ; Выход:
+1    21					 ;		 eax=0,	если успешно
+1    22					 ;				 es:edi	указывает на следующий символ в	буфере после числа
+1    23					 ;		 eax=1,	если буффер слишком мал
+1    24
+1    25	    0000			 DecToString			 proc
+1    26
+1    27	    0000  66| 51							 push ecx
+1    28
+1    29	    0002  80 FB	00							 cmp bl, 0					 ;  +
+     30					 Если размер буфера < 8
+1    31	    0005  75 0A								 jne @@RightAlign			 ; то	    +
+     32					 выходим с ошибкой (код	1)
+1    33
+1    34	    0007  E8 003E							 call SignedNumberSize
+1    35
+1    36	    000A  66| 3B CA							 cmp ecx, edx
+1    37	    000D  7C 2B								 jl @@BufferTooSmall
+1    38
+1    39	    000F  EB 31								 jmp @@WriteNumberToBuffer
+1    40
+1    41	    0011			 @@RightAlign:
+1    42	    0011  66| 83 F9 01							 cmp ecx, 1
+1    43	    0015  7C 23								 jl @@BufferTooSmall
+1    44
+1    45	    0017  E8 002E							 call SignedNumberSize
+1    46
+1    47	    001A  66| 3B CA							 cmp ecx, edx
+1    48	    001D  7C 1B								 jl @@BufferTooSmall
+1    49
+1    50	    001F  66| 50							 push eax
+1    51	    0021  66| 53							 push ebx
+1    52
+1    53	    0023  66| BB 0000000B						 mov ebx, 11
+1    54	    0029  66| 2B DA							 sub ebx, edx
+1    55
+1    56	    002C  FC								 cld						    +
+     57					 ;установка флага направления df в 0
+Turbo Assembler	 Version 4.1	    12/25/14 11:30:56	    Page 2
+test.asm
+
+
+
+1    58	    002D  B0 20								 mov al, ' '					    +
+     59					 ;заполнение регистра al 9 символами х
+1    60	    002F  66| 8B CB							 mov ecx, ebx
+1    61	    0032  F3> AA							 rep stosb
+1    62
+1    63	    0034  66| 5B							 pop ebx
+1    64	    0036  66| 58							 pop eax
+1    65
+1    66	    0038  EB 08								 jmp @@WriteNumberToBuffer
+1    67
+1    68	    003A			 @@BufferTooSmall:								 ; Выход с  +
+     69					 ошибкой "Буфер	слишком	мал"
+1    70	    003A  66| B8 00000001						 mov eax, 1
+1    71
+1    72	    0040  EB 03								 jmp @@EndProc
+1    73
+1    74	    0042			 @@WriteNumberToBuffer:
+1    75	    0042  E8 0047							 call SignedNumberToBuffer
+1    76
+1    77	    0045			 @@EndProc:
+1    78	    0045  66| 59							 pop ecx
+1    79
+1    80	    0047  C3								 ret
+1    81
+1    82	    0048			 DecToString			 endp
+     83					 include SgnSize.inc
+1    84					 ; рТПГЕДХТБ ПРТЕДЕМЕОЙС ТБЪНЕТБ ЪОБЛПЧПЗП ЮЙУМБ
+1    85					 ; чИПД:
+1    86					 ;		 eax - ЮЙУМП
+1    87					 ; чЩИПД:
+1    88					 ;		 edx - ТБЪНЕТ ЮЙУМБ
+1    89
+1    90
+1    91	    0048			 SignedNumberSize		 proc
+1    92	    0048  66| 50						 push eax
+1    93
+1    94	    004A  66| 83 F8 00						 cmp eax, 0
+1    95	    004E  7C 05							 jl @@NumberIsNegative
+1    96
+1    97	    0050  E8 000D						 call UnsignedNumberSize
+1    98
+1    99	    0053  EB 08							 jmp @@EndProc
+1   100
+1   101	    0055			 @@NumberIsNegative:
+1   102
+1   103	    0055  66| F7 D8						 neg eax
+1   104	    0058  E8 0005						 call UnsignedNumberSize
+1   105	    005B  66| 42						 inc edx
+1   106	    005D			 @@EndProc:
+1   107	    005D  66| 58						 pop eax
+1   108
+1   109	    005F  C3							 ret
+1   110
+1   111	    0060			 SignedNumberSize		 endp
+    112					 include UsgnSize.inc
+1   113					 ; рТПГЕДХТБ ПРТЕДЕМЕОЙС ТБЪНЕТБ ВЕЪЪОБЛПЧПЗП ЮЙУМБ
+1   114					 ; чИПД:
+Turbo Assembler	 Version 4.1	    12/25/14 11:30:56	    Page 3
+test.asm
+
+
+
+1   115					 ;		 eax - ЮЙУМП
+1   116					 ; чЩИПД:
+1   117					 ;		 edx - ТБЪНЕТ ЮЙУМБ
+1   118
+1   119
+1   120	    0060			 UnsignedNumberSize		 proc
+1   121	    0060  66| 50						 push eax
+1   122	    0062  66| 53						 push ebx
+1   123
+1   124	    0064  66| BA 00000001					 mov edx, 1
+1   125
+1   126	    006A			 @@DigitLoop:
+1   127	    006A  66| 52						 push edx
+1   128
+1   129	    006C  66| BA 00000000					 mov edx, 0
+1   130	    0072  66| BB 0000000A					 mov ebx, 10
+1   131	    0078  66| F7 F3						 div ebx
+1   132
+1   133	    007B  66| 5A						 pop edx
+1   134
+1   135	    007D  66| 83 F8 00						 cmp eax, 0
+1   136	    0081  74 04							 je @@EndDigitLoop
+1   137
+1   138	    0083  66| 42						 inc edx
+1   139
+1   140	    0085  EB E3							 jmp @@DigitLoop
+1   141
+1   142	    0087			 @@EndDigitLoop:
+1   143	    0087  66| 5B						 pop ebx
+1   144	    0089  66| 58						 pop eax
+1   145
+1   146	    008B  C3							 ret
+1   147
+1   148	    008C			 UnsignedNumberSize		 endp
+    149					 include SNmToBuf.inc
+1   150					 ; рТПГЕДХТБ ЧЩЧПДБ ЪОБЛПЧПЗП ЮЙУМБ Ч ВХЖЕТ
+1   151					 ; чИПД:
+1   152					 ;		 eax - ЮЙУМП
+1   153					 ;		 es:edi	- БДТЕУ	ВХЖЖЕТБ
+1   154					 ; чЩИПД:
+1   155					 ;		  es:edi- ХЛБЪБФЕМШ ОБ УМЕДХАЭЙК УЙНЧПМ	РПУМЕ ЮЙУМБ Ч ВХЖЖЕТЕ
+1   156
+1   157	    008C			 SignedNumberToBuffer		 proc
+1   158
+1   159	    008C  66| 50						 push eax
+1   160
+1   161	    008E  66| 83 F8 00						 cmp eax, 0
+1   162	    0092  7D 09							 jge @@NumberIsUnsigned
+1   163
+1   164	    0094  67| C6 07 2D						 mov byte ptr [edi], '-'		 ; ъБРЙУЩЧБЕН ЕЗП Ч +
+    165					 ВХЖЕТ
+1   166	    0098  66| 47						 inc edi					 ; рЕТЕИПДЙН+
+    167					 Л УМЕДХАЭЕНХ УЙНЧПМХ Ч	ВХЖЕТЕ
+1   168
+1   169	    009A  66| F7 D8						 neg eax
+1   170
+1   171	    009D			 @@NumberIsUnsigned:
+Turbo Assembler	 Version 4.1	    12/25/14 11:30:56	    Page 4
+test.asm
+
+
+
+1   172	    009D  E8 0003						 call UnsignedNumberToBuffer
+1   173
+1   174	    00A0  66| 58						 pop eax
+1   175
+1   176	    00A2  C3							 ret
+1   177
+1   178	    00A3			 SignedNumberToBuffer		 endp
+1   179
+    180					 include UNmToBuf.inc
+1   181					 ; рТПГЕДХТБ ЧЩЧПДБ ВЕЪЪОБЛПЧПЗП ЮЙУМБ Ч ВХЖЕТ
+1   182					 ; чИПД:
+1   183					 ;		 eax - ЮЙУМП
+1   184					 ;		 es:edi	- БДТЕУ	ВХЖЖЕТБ
+1   185					 ; чЩИПД:
+1   186					 ;		 es:edi	- ХЛБЪБФЕМШ ОБ УМЕДХАЭЙК УЙНЧПМ	РПУМЕ ЮЙУМБ Ч ВХЖЖЕТЕ
+1   187
+1   188	    00A3			 UnsignedNumberToBuffer		 proc
+1   189
+1   190	    00A3  66| 50						 push eax
+1   191	    00A5  66| 53						 push ebx
+1   192	    00A7  66| 51						 push ecx
+1   193	    00A9  66| 52						 push edx
+1   194
+1   195	    00AB  E8 FFB2						 call UnsignedNumberSize
+1   196
+1   197	    00AE  66| 4A						 dec edx
+1   198
+1   199	    00B0			 @@DigitLoop:
+1   200	    00B0  66| BB 0000000A					 mov ebx, 10
+1   201	    00B6  66| 8B CA						 mov ecx, edx
+1   202
+1   203	    00B9  E8 002F						 call Pow					 ; чПЪЧПДЙН +
+    204					 10 Ч УФЕРЕОШ ТБЪТСДБ
+1   205
+1   206	    00BC  66| 52						 push edx
+1   207
+1   208	    00BE  66| BA 00000000					 mov edx, 0					 ; тБЪТСД = +
+    209					 ЮЙУМП / (10 ^ ОПНЕТ ТБЪТСДБ)
+1   210	    00C4  66| F7 F3						 div ebx					 ; юЙУМП =  +
+    211					 ЮЙcМП % (10 ^ ОПНЕТ ТБЪТСДБ)
+1   212
+1   213	    00C7  04 30							 add al, '0'					 ;	    +
+    214					 рТЕПВТБЪХЕН ТБЪТСД Ч УППФЧЕФУФЧХАЭЙК ЕНХ УЙНЧПМ
+1   215
+1   216	    00C9  26: 67| 88 07						 mov es:[edi], al			 ; ъБРЙУЩЧБЕН ЕЗП Ч +
+    217					 ВХЖЕТ
+1   218	    00CD  66| 47						 inc edi					 ; рЕТЕИПДЙН+
+    219					 Л УМЕДХАЭЕНХ УЙНЧПМХ Ч	ВХЖЕТЕ
+1   220
+1   221	    00CF  66| 8B C2						 mov eax, edx
+1   222
+1   223	    00D2  66| 5A						 pop edx
+1   224
+1   225	    00D4  66| 83 EA 01						 sub edx, 1					 ; хНЕОШЫБЕН+
+    226					 ОПНЕТ ТБЪТСДБ
+1   227	    00D8  7D D6							 jge @@DigitLoop			 ; еУМЙ	ПО > 0,	    +
+    228					 РТПДПМЦБЕН ПВТБВБФЩЧБФШ ТБЪТСДs
+Turbo Assembler	 Version 4.1	    12/25/14 11:30:56	    Page 5
+test.asm
+
+
+
+1   229
+1   230	    00DA  66| B8 00000000					 mov eax, 0					 ; чЩИПД ВЕЪ+
+    231					 ПЫЙВЛЙ
+1   232	    00E0  EB 00							 jmp @@EndProc
+1   233
+1   234	    00E2			 @@EndProc:
+1   235	    00E2  66| 5A						 pop edx
+1   236	    00E4  66| 59						 pop ecx
+1   237	    00E6  66| 5B						 pop ebx
+1   238	    00E8  66| 58						 pop eax
+1   239
+1   240	    00EA  C3							 ret
+1   241
+1   242	    00EB			 UnsignedNumberToBuffer		 endp
+1   243
+    244					 include Pow.inc
+1   245					 ;	 РџСЂРѕС†РµРґСѓСЂР° РІРѕР·РІРµРґРµРЅРёСЏ С‡РёСЃР»Р° РІ СЃС‚РµРїРµРЅСЊ
+1   246					 ;	 Р’С…РѕРґ:
+1   247					 ;			 ebx - С‡РёСЃР»Рѕ
+1   248					 ;			 ecx - СЃС‚РµРїРµРЅСЊ
+1   249					 ;	 Р’С‹С…РѕРґ:
+1   250					 ;			 ebx - С‡РёСЃР»Рѕ, РІРѕР·РІРµРґРµРЅРЅРѕРµ РІ СЃС‚РµРїРµРЅСЊ
+1   251
+1   252	    00EB			 Pow			 proc
+1   253
+1   254	    00EB  66| 50					 push eax			 ;РїРѕРјРµС‰Р°РµРј Р·РЅР°С‡РµРЅРёСЏ +
+    255					 РёР·РјРµРЅСЏРµРјС‹С… СЂРµРіРёСЃС‚СЂРѕРІ РІ СЃС‚РµРє
+1   256	    00ED  66| 51					 push ecx
+1   257	    00EF  66| 52					 push edx
+1   258
+1   259	    00F1  66| B8 00000001				 mov eax, 1			 ;СЂРµР·СѓР»СЊС‚Р°С‚ = 1
+1   260	    00F7			 @@PowLoop:
+1   261	    00F7  66| 83 F9 00					 cmp ecx, 0			 ;СЃС‚РµРїРµРЅСЊ > 0?
+1   262	    00FB  74 07						 je @@EndPowLoop
+1   263
+1   264	    00FD  66| F7 E3					 mul ebx			 ;СЂРµР·СѓР»СЊС‚Р°С‚ =		    +
+    265					 СЂРµР·СѓР»СЊС‚Р°С‚ * С‡РёСЃР»Рѕ
+1   266	    0100  66| 49					 dec ecx			 ;СЃС‚РµРїРµРЅСЊ--
+1   267	    0102  EB F3						 jmp @@PowLoop
+1   268	    0104			 @@EndPowLoop:
+1   269	    0104  66| 8B D8					 mov ebx, eax
+1   270
+1   271	    0107  66| 5A					 pop edx
+1   272	    0109  66| 59					 pop ecx
+1   273	    010B  66| 58					 pop eax
+1   274
+1   275	    010D  C3						 ret
+1   276
+1   277	    010E			 Pow			 endp
+    278
+    279	    010E			 Main			 proc
+    280
+    281	    010E  66| B8 000004D2					 mov eax, 1234					 ;тесты
+    282	    0114  66| B9 00000008					 mov ecx, 8
+    283	    011A  66| BB 00000001					 mov ebx, 1
+    284	    0120  E8 002F						 call TestDecToStr
+    285
+Turbo Assembler	 Version 4.1	    12/25/14 11:30:56	    Page 6
+test.asm
+
+
+
+    286	    0123  66| B8 00000000					 mov eax, 0
+    287	    0129  66| B9 00000008					 mov ecx, 8
+    288	    012F  66| BB 00000000					 mov ebx, 0
+    289	    0135  E8 001A						 call TestDecToStr
+    290
+    291	    0138  66| B8 00000001					 mov eax, 1
+    292	    013E  66| B9 00000002					 mov ecx, 2
+    293	    0144  66| BB 00000001					 mov ebx, 1
+    294	    014A  E8 0005						 call TestDecToStr
+    295
+    296	    014D  B8 4C00						 mov ax, 4c00h
+    297	    0150  CD 21							 int 21h
+    298
+    299	    0152			 Main			 endp
+    300
+    301					 ;Процедура тестирования перевода шестандцатеричного числа в строку
+    302					 ;Вход:
+    303					 ;		 eax - число
+    304					 ;		 ecx - размер буффера
+    305					 ;		 ebx - выравнивание
+    306					 ;Выход:
+    307					 ;		 -
+    308
+    309	    0152			 TestDecToStr	 proc
+    310
+    311	    0152  66| 50						 push eax						    +
+    312					 ;помещение содержимого	изменяемых регистров в стек
+    313	    0154  66| 51						 push ecx
+    314	    0156  66| 52						 push edx
+    315	    0158  66| 57						 push edi
+    316	    015A  1E							 push ds
+    317	    015B  06							 push es
+    318
+    319	    015C  66| 50						 push eax
+    320	    015E  66| 51						 push ecx
+    321
+    322	    0160  B8 0000s						 mov ax, DataSegment
+    323	    0163  8E D8							 mov ds, ax
+    324	    0165  8E C0							 mov es, ax
+    325									 assume	ds:DataSegment,	es:DataSegment
+    326
+    327	    0167  66| 8D 3E 0005r					 lea edi, Buffer
+    328	    016C  FC							 cld							    +
+    329					 ;установка флага направления df в 0
+    330	    016D  B0 78							 mov al, 'x'						    +
+    331					 ;заполнение регистра al 9 символами х
+    332	    016F  66| B9 0000000C					 mov ecx, 12
+    333	    0175  F3> AA						 rep stosb
+    334
+    335	    0177  66| 59						 pop ecx
+    336	    0179  66| 58						 pop eax
+    337
+    338	    017B  66| 8D 3E 0005r					 lea edi, Buffer
+    339	    0180  E8 FE7D						 call DecToString
+    340
+    341	    0183  66| 83 F8 00						 cmp eax, 0
+    342	    0187  74 10							 je @@NoError
+Turbo Assembler	 Version 4.1	    12/25/14 11:30:56	    Page 7
+test.asm
+
+
+
+    343
+    344	    0189  66| 83 F8 01						 cmp eax, 1
+    345	    018D  74 05							 je @@ErrorBufferTooSmall
+    346
+    347	    018F  BA 0027r						 lea dx, UnknownErrorMsg
+    348	    0192  EB 0C							 jmp @@ShowMessage
+    349
+    350	    0194			 @@ErrorBufferTooSmall:
+    351	    0194  BA 0014r						 lea dx, BufferTooSmall
+    352	    0197  EB 07							 jmp @@ShowMessage
+    353	    0199			 @@NoError:
+    354	    0199  67| C6 07 5E						 mov byte ptr [edi], '^'			 ;помещаем  +
+    355					 знак ^	в конец	строки
+    356	    019D  BA 0000r						 lea dx, DecMessage
+    357
+    358	    01A0			 @@ShowMessage:
+    359	    01A0  B4 09							 mov ah, 9						    +
+    360					 ;номер	вызываемой функции
+    361	    01A2  CD 21							 int 21h
+    362	    01A4			 @@EndProc:
+    363	    01A4  07							 pop es
+    364	    01A5  1F							 pop ds
+    365	    01A6  66| 5F						 pop edi
+    366	    01A8  66| 5A						 pop edx
+    367	    01AA  66| 59						 pop ecx
+    368	    01AC  66| 58						 pop eax
+    369	    01AE  C3							 ret
+    370
+    371	    01AF			 TestDecToStr	 endp
+    372
+    373	    01AF			 CodeSegment	 ends
+    374
+    375	    0000			 DataSegment		 segment use16
+    376	    0000				 DecMessage	 label byte
+    377	    0000  44 65	63 3A 09					 db	 'Dec:	 '
+    378	    0005  23 23	23 23 23 23 23+		 Buffer		 db '###########*', 13,	10, '$'
+    379		  23 23	23 23 2A 0D 0A+
+    380		  24
+    381	    0014  42 75	66 66 65 72 20+		 BufferTooSmall	 db 'Buffer Too	Small',	13, 10,	'$'
+    382		  54 6F	6F 20 53 6D 61+
+    383		  6C 6C	0D 0A 24
+    384	    0027  55 6E	6B 6E 6F 77 6E+		 UnknownErrorMsg db 'Unknown Error', 13, 10, '$'
+    385		  20 45	72 72 6F 72 0D+
+    386		  0A 24
+    387
+    388
+    389	    0037			 DataSegment		 ends
+    390
+    391	    0000			 StackSegment	 segment use16 stack 'stack'
+    392	    0000  0400*(??)						 db 1024 dup (?)
+    393	    0400			 StackSegment	 ends
+    394
+    395									 end Main
+Turbo Assembler	 Version 4.1	    12/25/14 11:30:56	    Page 8
+Symbol Table
+
+
+
+
+Symbol Name			  Type	 Value
+
+??date				  Text	 "12/25/14"
+??filename			  Text	 "test	  "
+??time				  Text	 "11:30:56"
+??version			  Number 040A
+@@BufferTooSmall		  Near	 CodeSegment:003A
+@@DigitLoop			  Near	 CodeSegment:006A
+@@DigitLoop			  Near	 CodeSegment:00B0
+@@EndDigitLoop			  Near	 CodeSegment:0087
+@@EndPowLoop			  Near	 CodeSegment:0104
+@@EndProc			  Near	 CodeSegment:0045
+@@EndProc			  Near	 CodeSegment:005D
+@@EndProc			  Near	 CodeSegment:00E2
+@@EndProc			  Near	 CodeSegment:01A4
+@@ErrorBufferTooSmall		  Near	 CodeSegment:0194
+@@NoError			  Near	 CodeSegment:0199
+@@NumberIsNegative		  Near	 CodeSegment:0055
+@@NumberIsUnsigned		  Near	 CodeSegment:009D
+@@PowLoop			  Near	 CodeSegment:00F7
+@@RightAlign			  Near	 CodeSegment:0011
+@@ShowMessage			  Near	 CodeSegment:01A0
+@@WriteNumberToBuffer		  Near	 CodeSegment:0042
+@Cpu				  Text	 0F0FH
+@FileName			  Text	 test
+@WordSize			  Text	 2
+@curseg				  Text	 StackSegment
+Buffer				  Byte	 DataSegment:0005
+BufferTooSmall			  Byte	 DataSegment:0014
+DecMessage			  Byte	 DataSegment:0000
+DecToString			  Near	 CodeSegment:0000
+Main				  Near	 CodeSegment:010E
+Pow				  Near	 CodeSegment:00EB
+SignedNumberSize		  Near	 CodeSegment:0048
+SignedNumberToBuffer		  Near	 CodeSegment:008C
+TestDecToStr			  Near	 CodeSegment:0152
+UnknownErrorMsg			  Byte	 DataSegment:0027
+UnsignedNumberSize		  Near	 CodeSegment:0060
+UnsignedNumberToBuffer		  Near	 CodeSegment:00A3
+
+Groups & Segments		  Bit Size Align  Combine Class
+
+CodeSegment			  16  01AF Para	  none
+DataSegment			  16  0037 Para	  none
+StackSegment			  16  0400 Para	  Stack	  stack
+

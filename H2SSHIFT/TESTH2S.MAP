@@ -1,0 +1,9 @@
+
+ Start  Stop   Length Name               Class
+
+ 00000H 000FFH 00100H CODESEGMENT        
+ 00100H 00133H 00034H DATASEGMENT        
+ 00140H 0053FH 00400H STACKSEGMENT       STACK
+
+Program entry point at 0000:0053
+
